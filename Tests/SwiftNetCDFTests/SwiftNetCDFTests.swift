@@ -9,7 +9,7 @@ final class SwiftNetCDFTests: XCTestCase {
     func testCreateSimple() throws {
         let data = (Int32(0)..<50).map{$0}
         
-        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
         try file.setAttribute("TITLE", "My data set")
         
         let dimensions = [
@@ -23,7 +23,9 @@ final class SwiftNetCDFTests: XCTestCase {
         
         
         // Open the same file again and read the data
-        let file2 = try File.open(path: "test.nc", allowWrite: false)
+        guard let file2 = try NetCDF.open(path: "test.nc", allowUpdate: false) else {
+            fatalError("File test.nc does not exist")
+        }
         guard let title: String = try file2.getAttribute("TITLE")?.read() else {
             fatalError("TITLE attribute not available or not a String")
         }
@@ -41,7 +43,7 @@ final class SwiftNetCDFTests: XCTestCase {
     }
     
     func testCreateGroups() throws {
-        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
         
         // Create new group. Analog the `getGroup(name: )` function can be used for existing groups
         let subGroup = try file.createGroup(name: "GROUP1")
@@ -55,24 +57,24 @@ final class SwiftNetCDFTests: XCTestCase {
         try lats.write((0..<10).map(Float.init))
         try lons.write((0..<5).map(Float.init))
         
-        // `data` is of type `VariableGeneric<Float>`. Define functions can be accessed via `data.variable`
+        // `data` is of type `VariableGeneric<Float>`
         var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimensions: [dimLat, dimLon])
         
         // Enable compression, shuffle filter and chunking
-        try data.variable.defineDeflate(enable: true, level: 6, shuffle: true)
-        try data.variable.defineChunking(chunking: .chunked, chunks: [1, 5])
+        try data.defineDeflate(enable: true, level: 6, shuffle: true)
+        try data.defineChunking(chunking: .chunked, chunks: [1, 5])
         
         /// Because the latitude dimension is unlimted, we can write more than the defined size
         let array = (0..<1000).map(Float.init)
         try data.write(array, offset: [0, 0], count: [10, 100])
         
         /// The check the new dimension count
-        XCTAssertEqual(data.variable.dimensionsFlat, [10, 100])
+        XCTAssertEqual(data.dimensionsFlat, [10, 100])
         
         // even more data at an offset
         try data.write(array, offset: [0, 100], count: [10, 100])
         
-        XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
+        XCTAssertEqual(data.dimensionsFlat, [10, 200])
         
         
         /// Recursively print all groups
@@ -107,7 +109,9 @@ final class SwiftNetCDFTests: XCTestCase {
      Test groups with subgroups
      */
     func testGroups() throws {
-        let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        XCTAssertNil(try NetCDF.open(path: "does-not-exist.nc", allowUpdate: false))
+        
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let group1 = try file.createGroup(name: "GROUP1")
         XCTAssertNotNil(file.getGroup(name: "GROUP1"))
         XCTAssertNil(file.getGroup(name: "NotExistingGroup"))
@@ -132,7 +136,7 @@ final class SwiftNetCDFTests: XCTestCase {
      */
     func testAttributes() throws {
         let data_float = [Float(42), 34, 123]
-        let file_raw = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file_raw = try NetCDF.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let variable = try file_raw.createGroup(name: "TEST").createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [try file_raw.createDimension(name: "MYDIM", length: 5)])
         let file = variable.variable
         

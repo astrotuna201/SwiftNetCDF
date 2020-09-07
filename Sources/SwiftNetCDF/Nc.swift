@@ -8,54 +8,9 @@
 import CNetCDF
 import Foundation
 
-/// All errors this library could throw
-public enum NetCDFError: Error {
-    case ncerror(code: Int32, error: String)
-    case invalidVariable
-    case noGroupFound
-    case badNcid
-    case badVarid
-    case badGroupid
-    case badName
-    case alreadyInDefineMode
-    case attributeNotFound
-    case noPermissions
-    case valueCanNotBeConverted
-    case operationRequiresNetCDFv4
-    case fileIsInStrictNetCDFv3Mode
-    case numberOfDimensionsInvalid
-    case numberOfElementsInvalid
-    case tooManyOpenFiles
-    case outOfMemory
-    case hdf5Error
-    case netCDF4MetedataError
-    case alreadyExists
-    
-    init(ncerr: Int32) {
-        switch ncerr {
-        case NC_ENOTVAR: self = .invalidVariable
-        case NC_EBADID: self = .badNcid
-        case NC_ENOTVAR: self = .badVarid
-        case NC_EBADGRPID: self = .badGroupid
-        case NC_EBADNAME: self = .badName
-        case NC_ENOTATT: self = .attributeNotFound
-        case NC_EINDEFINE: self = .alreadyInDefineMode
-        case NC_EPERM: self = .noPermissions
-        case NC_ENOTNC4: self = .operationRequiresNetCDFv4
-        case NC_ESTRICTNC3: self = .fileIsInStrictNetCDFv3Mode
-        case NC_ENOGRP: self = .noGroupFound
-        case NC_ENFILE: self = .tooManyOpenFiles
-        case NC_ENOMEM: self = .outOfMemory
-        case NC_EHDFERR: self = .hdf5Error
-        case NC_EDIMMETA: self = .netCDF4MetedataError
-        case NC_EEXIST: self = .alreadyExists
-        default:
-            let error = String(cString: nc_strerror(ncerr))
-            self = .ncerror(code: ncerr, error: error)
-        }
-    }
-}
-
+/**
+ The TypeId initiliser is only available in this file.
+ */
 public extension ExternalDataType {
     var typeId: TypeId {
         return TypeId(rawValue)
@@ -249,12 +204,12 @@ public struct VarId {
         }
     }
     
-    /// Set filter options
-    public func def_var_filter(id: UInt32, params: [UInt32]) throws {
+    /// Set filter options -> Not available in older NetCDF versions
+    /*public func def_var_filter(id: UInt32, params: [UInt32]) throws {
         try Nc.exec {
             nc_def_var_filter(ncid.ncid, varid, id, params.count, params)
         }
-    }
+    }*/
 }
 
 
@@ -591,8 +546,8 @@ public extension Nc {
     }
     
     /// Open an exsiting NetCDF file
-    static func open(path: String, allowWrite: Bool) throws -> NcId {
-        return try open(path: path, omode: allowWrite ? NC_WRITE : 0)
+    static func open(path: String, allowUpdate: Bool) throws -> NcId {
+        return try open(path: path, omode: allowUpdate ? NC_WRITE : 0)
     }
     
     /// Create a new NetCDF file

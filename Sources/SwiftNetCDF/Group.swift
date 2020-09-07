@@ -62,7 +62,8 @@ public final class Group {
     }
     
     /// Define a new variable in the netcdf file
-    public func createVariable(name: String, type: TypeId, dimensions: [Dimension]) throws -> Variable {
+    /// Internal because user data types should not yet be exposed
+    internal func createVariable(name: String, type: TypeId, dimensions: [Dimension]) throws -> Variable {
         return try Variable(name: name, type: type, dimensions: dimensions, group: self)
     }
     
@@ -183,7 +184,7 @@ public final class Group {
     }
 }
 
-extension Group: AttributeProvider {
+extension Group: AttributeProvidable {
     public var varid: VarId {
         return ncid.NC_GLOBAL()
     }

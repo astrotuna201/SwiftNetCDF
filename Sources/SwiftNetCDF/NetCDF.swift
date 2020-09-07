@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  NetCDF.swift
 //  SwiftNetCDF
 //
 //  Created by Patrick Zippenfenig on 2019-09-10.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class File {
+public final class NetCDF {
     /**
      Create a new netCDF file.
      
@@ -40,19 +40,23 @@ public final class File {
      
      - Parameters:
         - path: File name for netCDF dataset to be opened. When the dataset is located on some remote server, then the path may be an OPeNDAP URL rather than a file path. If a the path is a DAP URL, then the open mode is read-only. Setting NC_WRITE will be ignored.
-        - allowWrite: If true, opens the dataset with read-write access. ("Writing" means any kind of change to the dataset, including appending or changing data, adding or renaming dimensions, variables, and attributes, or deleting attributes.)
+        - allowUpdate: If true, opens the dataset with read-write access. ("Writing" means any kind of change to the dataset, including appending or changing data, adding or renaming dimensions, variables, and attributes, or deleting attributes.)
      
      - Throws:
-        - `NetCDFError.noPermissions` Attempting to create a netCDF file in a directory where you do not have permission to open files.
+        - `NetCDFError.noPermissions` Attempting to open a netCDF file in a directory where you do not have permission to open files.
         - `NetCDFError.tooManyOpenFiles` Too many files open
         - `NetCDFError.outOfMemory` Out of memory
         - `NetCDFError.hdf5Error` HDF5 error. (NetCDF-4 files only.)
         - `NetCDFError.netCDF4MetedataError` Error in netCDF-4 dimension metadata. (NetCDF-4 files only.)
      
-     - Returns: Root group of a NetCDF file
+     - Returns: Root group of a NetCDF file or nil if the file does not exist
      */
-    public static func open(path: String, allowWrite: Bool) throws -> Group {
-        let ncid = try Nc.open(path: path, allowWrite: allowWrite)
-        return Group(ncid: ncid, parent: nil)
+    public static func open(path: String, allowUpdate: Bool) throws -> Group? {
+        do {
+            let ncid = try Nc.open(path: path, allowUpdate: allowUpdate)
+            return Group(ncid: ncid, parent: nil)
+        } catch (NetCDFError.noSuchFileOrDirectory) {
+            return nil
+        }
     }
 }
